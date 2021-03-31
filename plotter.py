@@ -1,12 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import use as matplotlib_use
 import pandas as pd
+
 from os import listdir
 import logging as log
 # from uncertainties.unumpy import uarray
-
-matplotlib_use('qt5agg')
 
 # Look for all data files. This also returns subfolders.
 files = listdir('data')
@@ -25,10 +22,17 @@ for filename in files:
 
 # Clean up data
 for key, data in datasets.items():
-    data.drop(labels=[0,1,2], axis='index', inplace=True)
+    data.drop(labels=[0, 1, 2], axis='index', inplace=True)
     data = data.astype(float)
     datasets[key] = data
     log.info('Cleaned pandas object ' + key)
 
-for data in datasets.values():
-    data.plot()
+for key, data in datasets.items():
+    fig, ax = plt.subplots()
+    ax.plot(data['Wavelength (nm)'], data['Voltage (mV)'])
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Voltage (mV)')
+    ax.set_title(key)
+
+# Needed to show plots in terminal environment.
+plt.show()
