@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from os import listdir
 import logging as log
 # from uncertainties.unumpy import uarray
@@ -17,7 +16,7 @@ for filename in files:
         continue
     path = 'data/' + filename
     datasets[filename.replace('.csv', '')] = pd.read_csv(
-        path, names=['Wavelength (nm)', 'Voltage (mV)'])
+        path, names=['Wavelength (nm)', 'Voltage (uV)'])
     log.info('Read {} as csv'.format(path))
 
 # Clean up data
@@ -29,9 +28,9 @@ for key, data in datasets.items():
 
 for key, data in datasets.items():
     fig, ax = plt.subplots()
-    ax.plot(data['Wavelength (nm)'], data['Voltage (mV)'])
+    ax.plot(data['Wavelength (nm)'], data['Voltage (uV)'])
     ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Voltage (mV)')
+    ax.set_ylabel('Voltage ($\mu$V)')
     ax.set_title(key)
 
 # Needed to show plots in terminal environment.
