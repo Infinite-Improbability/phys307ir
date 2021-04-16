@@ -30,7 +30,7 @@ for key, data in datasets.items():
     fig, ax = plt.subplots()
     ax.plot(data['Wavelength (nm)'], data['Voltage (uV)'])
     ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Voltage ($\mu$V)')
+    ax.set_ylabel('Voltage ($\mu$V)') # pylint: disable=anomalous-backslash-in-string
     ax.set_title(key)
 
 # Needed to show plots in terminal environment.
