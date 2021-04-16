@@ -1,8 +1,9 @@
+"""Plot graphs of intensity against wavenumber for selected datasets."""
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from os import listdir
 import logging as log
-# from uncertainties.unumpy import uarray
 
 # Look for all data files. This also returns subfolders.
 files = listdir('data')
@@ -23,13 +24,14 @@ for filename in files:
 for key, data in datasets.items():
     data.drop(labels=[0, 1, 2], axis='index', inplace=True)
     data = data.astype(float)
+    data['Wavenumber (cm^-1)'] = 1 / (data['Wavelength (nm)']*(10 ** -7))
     datasets[key] = data
     log.info('Cleaned pandas object ' + key)
 
 for key, data in datasets.items():
     fig, ax = plt.subplots()
-    ax.plot(data['Wavelength (nm)'], data['Voltage (uV)'])
-    ax.set_xlabel('Wavelength (nm)')
+    ax.plot(data['Wavenumber (cm^-1)'], data['Voltage (uV)'])
+    ax.set_xlabel('Wavenumber (cm^-1)')
     ax.set_ylabel('Voltage ($\mu$V)') # pylint: disable=anomalous-backslash-in-string
     ax.set_title(key)
 
