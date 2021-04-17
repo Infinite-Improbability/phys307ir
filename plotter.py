@@ -5,6 +5,9 @@ import pandas as pd
 from os import listdir
 import logging as log
 
+# Quick and dirty way to control if the plots have titles
+title = True
+
 # Look for all data files. This also returns subfolders.
 files = listdir('data')
 log.info('Found {} files and subdirectories: {}'.format(len(files), files))
@@ -33,7 +36,8 @@ for key, data in datasets.items():
     ax.plot(data['Wavenumber (cm^-1)'], data['Voltage (uV)'])
     ax.set_xlabel('Wavenumber (cm^-1)')
     ax.set_ylabel('Voltage ($\mu$V)') # pylint: disable=anomalous-backslash-in-string
-    ax.set_title(key)
+    if title:
+        ax.set_title(key)
 
 # Needed to show plots in terminal environment.
 plt.show()
