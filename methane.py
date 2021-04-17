@@ -10,8 +10,8 @@ from uncertainties import ufloat as uf
 from uncertainties import umath
 
 # Get the datafile we need
-filename = 'Methane (sample A) high res.csv'
-file = 'data/' + filename
+filename = 'Methane (sample A) high res'
+file = 'data/' + filename + '.csv'
 
 # Laod csv file into pandas objects
 data = pd.read_csv(file, names=['Wavelength (nm)', 'Voltage (uV)'])
