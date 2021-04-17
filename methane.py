@@ -5,6 +5,8 @@ import pandas as pd
 import logging as log
 from scipy import signal
 from uncertainties import ufloat as uf
+from scipy import constants as const
+from scipy.stats import linregress
 
 # Get the datafile we need
 filename = 'Methane (sample A) high res.csv'
@@ -18,6 +20,7 @@ log.info('Read {} as csv'.format(file))
 data.drop(labels=[0, 1, 2], axis='index', inplace=True)
 data = data.astype(float)
 data['Wavenumber (cm^-1)'] = 1 / (data['Wavelength (nm)']*(10 ** -7))
+data['Energy (J)'] = const.Planck * const.speed_of_light / (data['Wavelength (nm)'] * (10 ** -9))
 log.info('Cleaned pandas object ' + filename)
 
 # Get peaks
@@ -25,12 +28,14 @@ peak_indices = signal.find_peaks(data['Voltage (uV)'], prominence=10)[0]
 peaks = data.iloc[peak_indices]
 
 # Split peaks into P and R bands
-p_band = peaks[peaks['Wavelength (nm)'] <= 3255]
-r_band = peaks[peaks['Wavelength (nm)'] >= 3350]
+# This also resets the indices so we can use them as quantum number L later
+p_band = peaks[peaks['Wavelength (nm)'] <= 3255].reset_index(drop=True)
+r_band = peaks[peaks['Wavelength (nm)'] >= 3350].reset_index(drop=True)
+print(p_band)
 
+# Find dv values and average, with error
 p_diff = p_band.diff().abs()
 r_diff = r_band.diff().abs()
-
 p_mean = p_diff['Wavenumber (cm^-1)'].mean()
 p_sem = p_diff['Wavenumber (cm^-1)'].sem()
 r_mean = r_diff['Wavenumber (cm^-1)'].mean()
@@ -38,13 +43,26 @@ r_sem = r_diff['Wavenumber (cm^-1)'].sem()
 p_mean = uf(p_mean, p_sem)
 r_mean = uf(r_mean, r_sem)
 
-# Find B
+# Find B from 2B=dv estimate
 pb = p_mean / 2
 rb = r_mean / 2
-print(pb)
-print(rb)
+b_from_dv = (pb + rb) / 2
+print('B estimated from dv in P band: {} cm^-1'.format(pb))
+print('B estimated from dv in R band: {} cm^-1'.format(rb))
+print('Average B estimate from dv: {} cm^-1'.format(b_from_dv))
 
-# Plot
+# Find linear fits for trendlines
+p_trend = linregress(p_band.index, p_band['Energy (J)'])
+r_trend = linregress(r_band.index, r_band['Energy (J)'])
+# Gradient m = +/-2hcB so ZB = +/- m/(2hc)
+rt = uf(r_trend.slope, r_trend.stderr) * (10 ** -2) / (2 * const.Planck * const.speed_of_light) 
+pt = uf(p_trend.slope, p_trend.stderr) * (10 ** -2) / (2 * const.Planck * const.speed_of_light)
+b_from_grad = (pt + rt) / 2
+print('B estimated from gradient of P band: {} cm^-1'.format(pt))
+print('B estimated from gradient of R band: {} cm^-1'.format(rt))
+print('Average B estimate from gradient: {} cm^-1'.format(b_from_grad))
+
+# Plot measured intensities, with peaks highlighted.
 fig, ax = plt.subplots()
 ax.plot(data['Wavelength (nm)'], data['Voltage (uV)'])
 ax.scatter(p_band['Wavelength (nm)'], p_band['Voltage (uV)'], color='red')
@@ -52,6 +70,17 @@ ax.scatter(r_band['Wavelength (nm)'], r_band['Voltage (uV)'], color='orange')
 ax.set_xlabel('Wavelength (nm)')
 ax.set_ylabel('Voltage ($\mu$V)') # pylint: disable=anomalous-backslash-in-string
 ax.set_title(filename)
+
+# Plot energy against quantum number
+fig2, ax2 = plt.subplots()
+ax2.scatter(p_band.index, p_band['Energy (J)'], label='P band')
+ax2.scatter(r_band.index, r_band['Energy (J)'], label='R band')
+plt.plot(p_band.index, p_trend.intercept + p_trend.slope*p_band.index, 'r', label='P trend')
+plt.plot(r_band.index, r_trend.intercept + r_trend.slope*r_band.index, 'b', label='R trend')
+ax2.set_xlabel('L')
+ax2.set_ylabel('Energy (J)') # pylint: disable=anomalous-backslash-in-string
+ax2.set_title('Energy vs Quantum Number')
+ax2.legend()
 
 # Needed to show plots in terminal environment.
 plt.show()
