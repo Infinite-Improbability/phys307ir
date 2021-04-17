@@ -24,15 +24,15 @@ data['Wavenumber (cm^-1)'] = 1 / (data['Wavelength (nm)']*(10 ** -7))
 data['Energy (J)'] = const.Planck * const.speed_of_light / (data['Wavelength (nm)'] * (10 ** -9))
 log.info('Cleaned pandas object ' + filename)
 
-# Get peaks
-peak_indices = signal.find_peaks(data['Voltage (uV)'], prominence=10)[0]
-peaks = data.iloc[peak_indices]
+# Get dips
+# Inverted data to find dips instead of peaks => absorption
+dip_indices = signal.find_peaks(-data['Voltage (uV)'], prominence=10)[0]
+dips = data.iloc[dip_indices]
 
-# Split peaks into P and R bands
+# Split dips into P and R bands
 # This also resets the indices so we can use them as quantum number L later
-p_band = peaks[peaks['Wavelength (nm)'] <= 3255].reset_index(drop=True)
-r_band = peaks[peaks['Wavelength (nm)'] >= 3350].reset_index(drop=True)
-print(p_band)
+p_band = dips[dips['Wavelength (nm)'] <= 3255].reset_index(drop=True)
+r_band = dips[dips['Wavelength (nm)'] >= 3350].reset_index(drop=True)
 
 # Find dv values and average, with error
 p_diff = p_band.diff().abs()
@@ -78,7 +78,7 @@ r_co = umath.sqrt(I / (6.857 * const.atomic_mass)) # pylint: disable=no-member
 print('Bond length if methane: {} m'.format(r_ch4))
 print('Bond length if carbon monoxide: {} m'.format(r_co))
 
-# Plot measured intensities, with peaks highlighted.
+# Plot measured intensities, with dips highlighted.
 fig, ax = plt.subplots()
 ax.plot(data['Wavelength (nm)'], data['Voltage (uV)'])
 ax.scatter(p_band['Wavelength (nm)'], p_band['Voltage (uV)'], color='red')
