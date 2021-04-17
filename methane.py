@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import logging as log
 from scipy import signal
-from uncertainties import ufloat as uf
 from scipy import constants as const
 from scipy.stats import linregress
+from uncertainties import ufloat as uf
+from uncertainties import umath
 
 # Get the datafile we need
 filename = 'Methane (sample A) high res.csv'
@@ -55,12 +56,27 @@ print('Average B estimate from dv: {} cm^-1'.format(b_from_dv))
 p_trend = linregress(p_band.index, p_band['Energy (J)'])
 r_trend = linregress(r_band.index, r_band['Energy (J)'])
 # Gradient m = +/-2hcB so ZB = +/- m/(2hc)
-rt = uf(r_trend.slope, r_trend.stderr) * (10 ** -2) / (2 * const.Planck * const.speed_of_light) 
-pt = uf(p_trend.slope, p_trend.stderr) * (10 ** -2) / (2 * const.Planck * const.speed_of_light)
+rt = abs(uf(r_trend.slope, r_trend.stderr) * (10 ** -2) / (2 * const.Planck * const.speed_of_light))
+pt = abs(uf(p_trend.slope, p_trend.stderr) * (10 ** -2) / (- 2 * const.Planck * const.speed_of_light))
 b_from_grad = (pt + rt) / 2
 print('B estimated from gradient of P band: {} cm^-1'.format(pt))
 print('B estimated from gradient of R band: {} cm^-1'.format(rt))
 print('Average B estimate from gradient: {} cm^-1'.format(b_from_grad))
+
+# Note conversion of B from cm^-1 to m^-1 by multiplying by 100
+B = (b_from_dv + b_from_grad) / 2 * 100
+print('Overall B estimate: {} cm^-1'.format(B/100))
+
+# Inertia calculations
+I = const.Planck / (8 * const.speed_of_light * B * (const.pi ** 2))
+print('Inertia: {} kg m^2'.format(I))
+
+# m_h: mass of oxygen
+m_h = 1.008 * const.atomic_mass
+r_ch4 = umath.sqrt(3 * I / 8 / m_h) # pylint: disable=no-member
+r_co = umath.sqrt(I / (6.857 * const.atomic_mass)) # pylint: disable=no-member
+print('Bond length if methane: {} m'.format(r_ch4))
+print('Bond length if carbon monoxide: {} m'.format(r_co))
 
 # Plot measured intensities, with peaks highlighted.
 fig, ax = plt.subplots()
